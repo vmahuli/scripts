@@ -91,7 +91,8 @@ if [ -f $PRIOR_MANIFEST ]; then
     export BUILD_NOTIFY_USERS
 fi
 
-for BUILD_PLATFORM in ubuntu-14-04 ubuntu-12-04 redhat70 centos65 centos71 vcenter-plugin
+#for BUILD_PLATFORM in ubuntu-14-04 ubuntu-12-04 redhat70 centos65 centos71 vcenter-plugin
+for BUILD_PLATFORM in redhat70
 do
    for BUILD_SKU in icehouse juno kilo vcenter liberty mitaka
    do
@@ -121,15 +122,16 @@ do
           touch $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/Jenkins_build
 
           
-          if [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "centos71" ]; then
+          if [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]; then
               [ ${BUILD_PLATFORM} = "ubuntu-14-04" ] && GECOS="--disabled-password --gecos"
-              [ ${BUILD_PLATFORM} = "centos71" ]     && GECOS="--comment"
+              [ ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]     && GECOS="--comment"
               echo "Launching build VM..."
               echo
               source ${BUILD_SCRIPT_CLONE}/scripts/spawn-vm.sh
               
               [ ${BUILD_PLATFORM} = "ubuntu-14-04" ] && ci-create-vm-ubuntu-14-04 | tee /tmp/createvm.$$
               [ ${BUILD_PLATFORM} = "centos71" ]     && ci-create-vm-centos       | tee /tmp/createvm.$$
+              [ ${BUILD_PLATFORM} = "redhat70" ]     && ci-create-vm-redhat       | tee /tmp/createvm.$$
               ip=`cat /tmp/createvm.$$ | grep " floating_ip_address " | cut -d "|" -f3 | xargs`
               [ ! -f ~/jenkins-cli.jar ] && wget http://cs-build.contrail.juniper.net:8080/jnlpJars/jenkins-cli.jar --timeout=10 -P ~/
               
@@ -159,7 +161,12 @@ do
               if [ ${BUILD_PLATFORM} = "ubuntu-14-04" ]; then
                   sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "apt-get install -y nfs-common git"
               fi
-              if [ ${BUILD_PLATFORM} = "centos71" ]; then
+              if [ ${BUILD_PLATFORM} = "redhat70" ]; then
+                  sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum update -y"
+                  sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum downgrade redhat-release-server -y"
+                  sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum downgrade redhat-release-server -y"
+              fi
+              if [ ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]; then
                   sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum install -y nfs-utils git"
                   sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "sed -i 's/Defaults    requiretty//' /etc/sudoers"
               fi
