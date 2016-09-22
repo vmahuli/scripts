@@ -15,8 +15,8 @@ cd ${BUILDDIR}
 if [ -d /volume/contrail/$BRANCH ]; then
     cd /volume/contrail/$BRANCH
     if [ -s LATEST ]; then
-        CURR_BNO=`ls -l LATEST | cut -d '>' -f2`
-        BNO=`expr ${CURR_BNO} \+ 1`
+        CURR_BNO="$(ls -l LATEST | cut -d '>' -f2)"
+        BNO="$(expr ${CURR_BNO} \+ 1)"
     else
         BNO=1
     fi
@@ -27,6 +27,9 @@ else
     echo "No such branch found!!"
     exit 1
 fi
+
+sed -i "s/\$API_TOKEN/53e49510bf0157984b85239068b2e04b/" ${BUILDDIR}/contrail-build-scripts/scripts/remove-slaves.sh
+bash -x ${BUILDDIR}/contrail-build-scripts/scripts/cleanup.sh
 
 export BUILD_NUMBER=${BNO}
 
@@ -55,13 +58,13 @@ export BUILD_NOTIFY_USERS="vmahuli@juniper.net"
 mkdir -p $BUILD_WORKAREA/sb
 touch $BUILD_WORKAREA/Build-env.sh
 
-LATEST=`ls -l $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/LATEST | cut -d '>' -f2 | tr -d '[[:space:]]'`
+LATEST="$(ls -l $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/LATEST | cut -d '>' -f2 | tr -d '[[:space:]]')"
 PRIOR_MANIFEST=$BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/${LATEST}/ubuntu-14-04/kilo/manifest.xml
 $BUILD_SCRIPT_STEPS/09_UpdateLatest.sh
 
 #EC_SYNC
 if [ ${EC_SYNC} = "TRUE" ]; then
-    MANIFEST=`find /volume/contrail/${BRANCH}/LATEST -name  manifest.xml -follow`
+    MANIFEST="$(find /volume/contrail/${BRANCH}/LATEST -name  manifest.xml -follow)"
     for file in ${MANIFEST}
     do
       if [ -f ${file} ]; then
@@ -91,13 +94,16 @@ if [ -f $PRIOR_MANIFEST ]; then
     export BUILD_NOTIFY_USERS
 fi
 
-#for BUILD_PLATFORM in ubuntu-14-04 ubuntu-12-04 redhat70 centos65 centos71 vcenter-plugin
-for BUILD_PLATFORM in redhat70
+#BUILD_PLATFORM_LIST="$(ls -altr ${BUILD_ARCHIVE_ROOT}/$BUILD_BRANCH/${LATEST} | grep ^d | tr -s ' ' | cut -d ' ' -f9 | grep -v build-envs | grep -v '\.' | grep -v '\.\.') | xargs"
+#for BUILD_PLATFORM in ${BUILD_PLATFORM_LIST}
+#for BUILD_SKU in ${BUILD_SKU_LIST}
+#BUILD_SKU_LIST="$(ls ${BUILD_ARCHIVE_ROOT}/$BUILD_BRANCH/${LATEST}/${BUILD_PLATFORM})"
+
+for BUILD_PLATFORM in ubuntu-14-04 ubuntu-12-04 redhat70 centos65 centos71 vcenter-plugin
 do
    for BUILD_SKU in icehouse juno kilo vcenter liberty mitaka
    do
       if [ -d $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU} ]; then
-          # Create property file for kilo
           echo "umask 022" > $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
           echo "PATH=${PATH}" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
           echo "GITHUB_BUILD=/github-build-jenkins" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
@@ -123,31 +129,31 @@ do
 
           
           if [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]; then
-              [ ${BUILD_PLATFORM} = "ubuntu-14-04" ] && GECOS="--disabled-password --gecos"
+              [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "vcenter-plugin" ] && GECOS="--disabled-password --gecos"
               [ ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]     && GECOS="--comment"
               echo "Launching build VM..."
               echo
               source ${BUILD_SCRIPT_CLONE}/scripts/spawn-vm.sh
-              
-              [ ${BUILD_PLATFORM} = "ubuntu-14-04" ] && ci-create-vm-ubuntu-14-04 | tee /tmp/createvm.$$
+              set +e
+              [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "vcenter-plugin" ] && ci-create-vm-ubuntu-14-04 | tee /tmp/createvm.$$
               [ ${BUILD_PLATFORM} = "centos71" ]     && ci-create-vm-centos       | tee /tmp/createvm.$$
               [ ${BUILD_PLATFORM} = "redhat70" ]     && ci-create-vm-redhat       | tee /tmp/createvm.$$
-              ip=`cat /tmp/createvm.$$ | grep " floating_ip_address " | cut -d "|" -f3 | xargs`
+              set -e
+              ip="$(cat /tmp/createvm.$$ | grep " floating_ip_address " | cut -d "|" -f3 | xargs)"
               [ ! -f ~/jenkins-cli.jar ] && wget http://cs-build.contrail.juniper.net:8080/jnlpJars/jenkins-cli.jar --timeout=10 -P ~/
               
               #to connect jenkins slave install default-jre
               #sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip sudo apt-get install -y default-jre
               #Download jre from http://ftp.osuosl.org/pub/funtoo/distfiles/oracle-java/jre-8u92-linux-x64.tar.gz"
               #sshpass -p c0ntrail123 scp -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null ~/jre-8u92-linux-x64.tar.gz root@$ip:~/
-              set +x
+              set -x
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "curl -O http://10.84.5.120/cs-shared/images/jre-8u92-linux-x64.tar.gz"
               if [ $? != 0 ]; then
-                  set -x
                   #try with a different server
                   sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "curl -O http://ftp.osuosl.org/pub/funtoo/distfiles/oracle-java/jre-8u92-linux-x64.tar.gz"
               fi
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "tar -xzvf /root/jre-8u92-linux-x64.tar.gz"
-              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "ln -s /root/jre1.8.0_92/bin/java /usr/bin/java"
+              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "ln -s /root/jre1.8.0_92/bin/java /usr/bin/java || true"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "adduser $GECOS 'contrail-builder' contrail-builder"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "mkdir -p /ecbuilds/jenkins  /volume/contrail /github-build/distro-packages/build /cs-shared/builder /home/contrail-builder/.ssh"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo 'contrail-builder:c0ntrail123' | chpasswd"
@@ -158,16 +164,15 @@ do
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo '10.160.0.156:/contrail/contrail/distro-packages/build/  /github-build/distro-packages/build nfs      rw             0        0' >> /etc/fstab"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo 'contrail-builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "ln -s /github-build/distro-packages/build /cs-shared/builder/cache"
-              if [ ${BUILD_PLATFORM} = "ubuntu-14-04" ]; then
+              if [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "vcenter-plugin" ]; then
                   sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "apt-get install -y nfs-common git"
               fi
-              if [ ${BUILD_PLATFORM} = "redhat70" ]; then
-                  sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum update -y"
-                  sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum downgrade redhat-release-server -y"
-                  sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum downgrade redhat-release-server -y"
-              fi
+              #if [ ${BUILD_PLATFORM} = "redhat70" ]; then
+              #    sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum clean -y all"
+              #    sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum remove lvm2-2.02.105-14.el7.x86_64 lvm2-libs-2.02.105-14.el7.x86_64 -y"
+              #fi
+              [ ${BUILD_PLATFORM} = "centos71" ] && sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum install -y nfs-utils git"
               if [ ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]; then
-                  sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum install -y nfs-utils git"
                   sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "sed -i 's/Defaults    requiretty//' /etc/sudoers"
               fi
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "mount -a"
@@ -176,15 +181,15 @@ do
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null contrail-builder@$ip "ssh -o StrictHostKeyChecking=no git@github.com || true"
               echo "Adding Node to Jenkins at http://cs-build.contrail.juniper.net:8080/computer"
               echo
-              slave_ip=`echo $ip | sed -e 's/\./-/g'`
-              bash -x ${BUILD_SCRIPT_CLONE}/scripts/add-node.sh http://cs-build.contrail.juniper.net:8080/ contrail-build-${BUILD_PLATFORM}-${slave_ip}-${BUILD_SKU} $ip ${BUILD_PLATFORM}    
+              slave_ip="$(echo $ip | sed -e 's/\./-/g')"
+              [ ${BUILD_PLATFORM} = "ubuntu-14-04" ] && platform=ubuntu14
+              [ ${BUILD_PLATFORM} = "vcenter-plugin" ] && platform=ubuntu14
+              [ ${BUILD_PLATFORM} = "centos71" ] && platform=centos71
+              [ ${BUILD_PLATFORM} = "redhat70" ] && platform=redhat70
+              
+              bash -x ${BUILD_SCRIPT_CLONE}/scripts/add-node.sh http://cs-build.contrail.juniper.net:8080/ contrail-builder-${platform}-${slave_ip} $ip ${BUILD_PLATFORM}    
               sleep 10
           fi
       fi
    done  
 done
-
-
-
-#rm -rf $BUILD_SCRIPT_CLONE
-
