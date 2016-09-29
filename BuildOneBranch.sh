@@ -57,6 +57,7 @@ export BUILD_ENV_FILE=$BUILD_ARCHIVE_DIR/Build-${BUILD_BRANCH}-${BUILD_ID}-${BUI
 export BUILD_NOTIFY_USERS="vmahuli@juniper.net"
 mkdir -p $BUILD_WORKAREA/sb
 touch $BUILD_WORKAREA/Build-env.sh
+tempvar=0
 
 LATEST="$(ls -l $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/LATEST | cut -d '>' -f2 | tr -d '[[:space:]]')"
 PRIOR_MANIFEST=$BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/${LATEST}/ubuntu-14-04/kilo/manifest.xml
@@ -128,16 +129,16 @@ do
           touch $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/Jenkins_build
 
           
-          if [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]; then
+          if [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "vcenter-plugin" -o ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]; then
               [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "vcenter-plugin" ] && GECOS="--disabled-password --gecos"
               [ ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]     && GECOS="--comment"
               echo "Launching build VM..."
               echo
               source ${BUILD_SCRIPT_CLONE}/scripts/spawn-vm.sh
               set +e
-              [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "vcenter-plugin" ] && ci-create-vm-ubuntu-14-04 | tee /tmp/createvm.$$
-              [ ${BUILD_PLATFORM} = "centos71" ]     && ci-create-vm-centos       | tee /tmp/createvm.$$
-              [ ${BUILD_PLATFORM} = "redhat70" ]     && ci-create-vm-redhat       | tee /tmp/createvm.$$
+              [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "vcenter-plugin" ] && ci-create-vm-ubuntu-14-04 ${BUILD_BRANCH} | tee /tmp/createvm.$$
+              [ ${BUILD_PLATFORM} = "centos71" ]     && ci-create-vm-centos ${BUILD_BRANCH} | tee /tmp/createvm.$$
+              [ ${BUILD_PLATFORM} = "redhat70" ]     && ci-create-vm-redhat ${BUILD_BRANCH} | tee /tmp/createvm.$$
               set -e
               ip="$(cat /tmp/createvm.$$ | grep " floating_ip_address " | cut -d "|" -f3 | xargs)"
               [ ! -f ~/jenkins-cli.jar ] && wget http://cs-build.contrail.juniper.net:8080/jnlpJars/jenkins-cli.jar --timeout=10 -P ~/
@@ -167,15 +168,21 @@ do
               if [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "vcenter-plugin" ]; then
                   sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "apt-get install -y nfs-common git"
               fi
-              #if [ ${BUILD_PLATFORM} = "redhat70" ]; then
-              #    sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum clean -y all"
-              #    sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum remove lvm2-2.02.105-14.el7.x86_64 lvm2-libs-2.02.105-14.el7.x86_64 -y"
-              #fi
               [ ${BUILD_PLATFORM} = "centos71" ] && sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "yum install -y nfs-utils git"
               if [ ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]; then
                   sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "sed -i 's/Defaults    requiretty//' /etc/sudoers"
               fi
-              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "mount -a"
+              while [ $tempvar -ne 1 ]; do
+                  o=$(sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "ls /volume/contrail")
+                  if [ "x$o" -eq  "x" ]; then
+                      echo "/volume/contrail not mounted!"
+                      echo "Trying to mount..."
+                      sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "mount -a"
+                  else
+                      echo "/volume/contrail already mounted, good to go..."
+                      tempvar=1
+                  fi
+              done
               sshpass -p c0ntrail123 scp -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null ~/.ssh/id_rsa* contrail-builder@$ip:/home/contrail-builder/.ssh/.
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:contrail-builder /home/contrail-builder/.ssh/*"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null contrail-builder@$ip "ssh -o StrictHostKeyChecking=no git@github.com || true"
