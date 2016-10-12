@@ -1,5 +1,8 @@
 #!/bin/bash -xe
 
+[ -d ${WORKSPACE}/sb ] && rm -rf ${WORKSPACE}/sb
+mkdir -p ${WORKSPACE}/sb
+
 export BUILD_NUMBER
 BUILDDIR="/ecbuilds"
 cd ${BUILDDIR}/contrail-vnc-private
@@ -29,7 +32,7 @@ else
 fi
 
 sed -i "s/\$API_TOKEN/53e49510bf0157984b85239068b2e04b/" ${BUILDDIR}/contrail-build-scripts/scripts/remove-slaves.sh
-bash -x ${BUILDDIR}/contrail-build-scripts/scripts/cleanup.sh
+bash -x ${BUILDDIR}/contrail-build-scripts/scripts/cleanup.sh ${BRANCH}
 
 export BUILD_NUMBER=${BNO}
 
@@ -38,7 +41,7 @@ export BUILD_NUMBER=${BNO}
 ${BUILDDIR}/contrail-build-scripts/ec-bin/contrail-create-buildarchive -v -p "${BUILDDIR}/contrail-vnc-private" parse
 
 export PATH=${PATH}
-export GITHUB_BUILD=/github-build-jenkins
+export GITHUB_BUILD=/github-build
 export BUILD_ARCHIVE_ROOT=/volume/contrail
 export BUILD_BRANCH=${BRANCH}
 export BUILD_ID=${BUILD_NUMBER}
@@ -55,9 +58,11 @@ export BUILD_SKU=kilo
 export BUILD_ARCHIVE_DIR=$BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/$BUILD_SKU
 export BUILD_ENV_FILE=$BUILD_ARCHIVE_DIR/Build-${BUILD_BRANCH}-${BUILD_ID}-${BUILD_PLATFORM}-${BUILD_SKU}-env.sh
 export BUILD_NOTIFY_USERS="vmahuli@juniper.net"
+export BUILD_SANDBOX=sb
+
 mkdir -p $BUILD_WORKAREA/sb
 touch $BUILD_WORKAREA/Build-env.sh
-tempvar=0
+
 
 LATEST="$(ls -l $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/LATEST | cut -d '>' -f2 | tr -d '[[:space:]]')"
 PRIOR_MANIFEST=$BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/${LATEST}/ubuntu-14-04/kilo/manifest.xml
@@ -107,7 +112,7 @@ do
       if [ -d $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU} ]; then
           echo "umask 022" > $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
           echo "PATH=${PATH}" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "GITHUB_BUILD=/github-build-jenkins" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
+          echo "GITHUB_BUILD=/github-build" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
           echo "BUILD_ARCHIVE_ROOT=/volume/contrail" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
           echo "BUILD_BRANCH=${BRANCH}" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
           echo "BUILD_SKU=${BUILD_SKU}" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
@@ -155,13 +160,17 @@ do
               fi
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "tar -xzvf /root/jre-8u92-linux-x64.tar.gz"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "ln -s /root/jre1.8.0_92/bin/java /usr/bin/java || true"
-              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "adduser $GECOS 'contrail-builder' contrail-builder"
+              #sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "adduser $GECOS 'contrail-builder' contrail-builder"
+              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo 'ipg:x:757:contrail-builder' >> /etc/group"
+              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo 'contrail-builder:x:33694:757::/home/contrail-builder:/bin/bash' >> /etc/passwd"        
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "mkdir -p /ecbuilds/jenkins  /volume/contrail /github-build/distro-packages/build /cs-shared/builder /home/contrail-builder/.ssh"
+              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:ipg /home/contrail-builder"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo 'contrail-builder:c0ntrail123' | chpasswd"
-              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:contrail-builder /ecbuilds"
-              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:contrail-builder /ecbuilds/jenkins"
-              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:contrail-builder /home/contrail-builder/.ssh"            
-              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo '10.160.0.156:/contrail/contrail02/Dry-run  /volume/contrail nfs      rw             0        0' >> /etc/fstab"
+              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:ipg /ecbuilds"
+              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:ipg /ecbuilds/jenkins"
+              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:ipg /home/contrail-builder/.ssh"            
+              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo '10.160.0.155:/contrail/contrail /volume/contrail nfs      rw             0        0' >> /etc/fstab"
+              #sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo '10.160.0.156:/contrail/contrail02/Dry-run  /volume/contrail nfs      rw             0        0' >> /etc/fstab"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo '10.160.0.156:/contrail/contrail/distro-packages/build/  /github-build/distro-packages/build nfs      rw             0        0' >> /etc/fstab"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo 'contrail-builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "ln -s /github-build/distro-packages/build /cs-shared/builder/cache"
@@ -172,19 +181,23 @@ do
               if [ ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]; then
                   sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "sed -i 's/Defaults    requiretty//' /etc/sudoers"
               fi
+              tempvar=0
               while [ $tempvar -ne 1 ]; do
-                  o=$(sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "ls /volume/contrail")
-                  if [ "x$o" -eq  "x" ]; then
+                  o1=$(sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "ls /volume/contrail")
+                  o2=$(sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "ls /github-build/distro-packages/build")
+                  if [ "x$o1" =  "x" -o "x$o2" =  "x" ]; then
+                      set +e
                       echo "/volume/contrail not mounted!"
                       echo "Trying to mount..."
                       sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "mount -a"
                   else
                       echo "/volume/contrail already mounted, good to go..."
                       tempvar=1
+                      set -e
                   fi
               done
               sshpass -p c0ntrail123 scp -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null ~/.ssh/id_rsa* contrail-builder@$ip:/home/contrail-builder/.ssh/.
-              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:contrail-builder /home/contrail-builder/.ssh/*"
+              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:ipg /home/contrail-builder/.ssh/*"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null contrail-builder@$ip "ssh -o StrictHostKeyChecking=no git@github.com || true"
               echo "Adding Node to Jenkins at http://cs-build.contrail.juniper.net:8080/computer"
               echo
@@ -194,7 +207,7 @@ do
               [ ${BUILD_PLATFORM} = "centos71" ] && platform=centos71
               [ ${BUILD_PLATFORM} = "redhat70" ] && platform=redhat70
               
-              bash -x ${BUILD_SCRIPT_CLONE}/scripts/add-node.sh http://cs-build.contrail.juniper.net:8080/ contrail-builder-${platform}-${slave_ip} $ip ${BUILD_PLATFORM}    
+              bash -x ${BUILD_SCRIPT_CLONE}/scripts/add-node.sh http://cs-build.contrail.juniper.net:8080/ contrail-builder-${BUILD_BRANCH}-${platform}-${slave_ip} $ip ${BUILD_PLATFORM}    
               sleep 10
           fi
       fi
