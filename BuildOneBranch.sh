@@ -63,13 +63,12 @@ export BUILD_SANDBOX=sb
 mkdir -p $BUILD_WORKAREA/sb
 touch $BUILD_WORKAREA/Build-env.sh
 
-
 LATEST="$(ls -l $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/LATEST | cut -d '>' -f2 | tr -d '[[:space:]]')"
 PRIOR_MANIFEST=$BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/${LATEST}/ubuntu-14-04/kilo/manifest.xml
 $BUILD_SCRIPT_STEPS/09_UpdateLatest.sh
 
 #EC_SYNC
-if [ ${EC_SYNC} = "TRUE" ]; then
+if [[ $EC_SYNC = "TRUE" ]]; then
     MANIFEST="$(find /volume/contrail/${BRANCH}/LATEST -name  manifest.xml -follow)"
     for file in ${MANIFEST}
     do
@@ -82,9 +81,11 @@ if [ ${EC_SYNC} = "TRUE" ]; then
     done
 fi
 
+# Why do we need a full sandbox?
 $BUILD_SCRIPT_STEPS/01_CreateSandbox.sh
 $BUILD_SCRIPT_STEPS/02_CheckOutSource.sh
 
+# No capture of platform?
 echo "${BUILD_BRANCH}-${BNO}-${BUILD_SKU}" > ${WORKSPACE}/build_ver.txt
 
 echo "Getting git commit information"
@@ -105,35 +106,39 @@ fi
 #for BUILD_SKU in ${BUILD_SKU_LIST}
 #BUILD_SKU_LIST="$(ls ${BUILD_ARCHIVE_ROOT}/$BUILD_BRANCH/${LATEST}/${BUILD_PLATFORM})"
 
+# This section should get re-done by using ec-steps/00.1_GenerateEnv.sh
+# And should get done as STEP 00 (i.e., before ANYTHING else)
 for BUILD_PLATFORM in ubuntu-14-04 ubuntu-12-04 redhat70 centos65 centos71 vcenter-plugin
 do
    for BUILD_SKU in icehouse juno kilo vcenter liberty mitaka
    do
       if [ -d $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU} ]; then
-          echo "umask 022" > $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "PATH=${PATH}" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "GITHUB_BUILD=/github-build" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_ARCHIVE_ROOT=/volume/contrail" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_BRANCH=${BRANCH}" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_SKU=${BUILD_SKU}" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_ID=${BUILD_NUMBER}" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          #echo "BUILD_WORKAREA=${WORKSPACE}" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_ARCHIVE_DIR=$BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/$BUILD_SKU" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_ENV_DIR=$BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/build-envs" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_ENV_FILE=$BUILD_ARCHIVE_DIR/Build-${BUILD_BRANCH}-${BUILD_ID}-${BUILD_PLATFORM}-${BUILD_SKU}-env.sh" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_START=${BUILD_ID}" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_SCRIPT_STEPS=/ecbuilds/contrail-build-scripts/ec-steps" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_SCRIPT_REPO=git@github.com:Juniper/contrail-build-scripts.git" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_SCRIPT_CLONE=/ecbuilds/contrail-build-scripts" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_SCRIPT_BIN=$BUILD_SCRIPT_CLONE/ec-bin" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_SCRIPT_STEPS=$BUILD_SCRIPT_CLONE/ec-steps" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_NOTIFY_USERS=$BUILD_NOTIFY_USERS" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
-          echo "BUILD_PLATFORM=$BUILD_PLATFORM" >> $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
+          PROP_FILE=$BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties
+          echo "umask 022" > $PROP_FILE
+          echo "PATH=${PATH}" >> $PROP_FILE
+          echo "GITHUB_BUILD=/github-build" >> $PROP_FILE
+          echo "BUILD_ARCHIVE_ROOT=/volume/contrail" >> $PROP_FILE
+          echo "BUILD_BRANCH=${BRANCH}" >> $PROP_FILE
+          echo "BUILD_SKU=${BUILD_SKU}" >> $PROP_FILE
+          echo "BUILD_ID=${BUILD_NUMBER}" >> $PROP_FILE
+          echo "BUILD_WORKAREA=${WORKSPACE}" >> $PROP_FILE
+          echo "BUILD_ARCHIVE_DIR=$BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/$BUILD_SKU" >> $PROP_FILE
+          echo "BUILD_ENV_DIR=$BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/build-envs" >> $PROP_FILE
+          echo "BUILD_ENV_FILE=$BUILD_ARCHIVE_DIR/Build-${BUILD_BRANCH}-${BUILD_ID}-${BUILD_PLATFORM}-${BUILD_SKU}-env.sh" >> $PROP_FILE
+          echo "BUILD_START=${BUILD_ID}" >> $PROP_FILE
+          echo "BUILD_SCRIPT_STEPS=/ecbuilds/contrail-build-scripts/ec-steps" >> $PROP_FILE
+          echo "BUILD_SCRIPT_REPO=git@github.com:Juniper/contrail-build-scripts.git" >> $PROP_FILE
+          echo "BUILD_SCRIPT_CLONE=/ecbuilds/contrail-build-scripts" >> $PROP_FILE
+          echo "BUILD_SCRIPT_BIN=$BUILD_SCRIPT_CLONE/ec-bin" >> $PROP_FILE
+          echo "BUILD_SCRIPT_STEPS=$BUILD_SCRIPT_CLONE/ec-steps" >> $PROP_FILE
+          echo "BUILD_NOTIFY_USERS=$BUILD_NOTIFY_USERS" >> $PROP_FILE
+          echo "BUILD_PLATFORM=$BUILD_PLATFORM" >> $PROP_FILE
+          echo "BUILD_SANDBOX=$BUILD_SANDBOX" >> $PROP_FILE
           mkdir -p $BUILD_ENV_DIR
-          cp $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/${BUILD_SKU}.properties $BUILD_ENV_DIR/Build-${BUILD_BRANCH}-${BUILD_ID}-${BUILD_PLATFORM}-${BUILD_SKU}-env.sh
+          # We need to make sure all "VAR=..." lines are "export VAR=..."
+          sed -e 's/^\([A-Z_]*\)=/export \1=/' < $PROP_FILE > $BUILD_ENV_FILE
           touch $BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/$BUILD_ID/$BUILD_PLATFORM/${BUILD_SKU}/Jenkins_build
 
-          
           if [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "vcenter-plugin" -o ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]; then
               [ ${BUILD_PLATFORM} = "ubuntu-14-04" -o ${BUILD_PLATFORM} = "vcenter-plugin" ] && GECOS="--disabled-password --gecos"
               [ ${BUILD_PLATFORM} = "centos71" -o ${BUILD_PLATFORM} = "redhat70" ]     && GECOS="--comment"
@@ -147,7 +152,7 @@ do
               set -e
               ip="$(cat /tmp/createvm.$$ | grep " floating_ip_address " | cut -d "|" -f3 | xargs)"
               [ ! -f ~/jenkins-cli.jar ] && wget http://cs-build.contrail.juniper.net:8080/jnlpJars/jenkins-cli.jar --timeout=10 -P ~/
-              
+
               #to connect jenkins slave install default-jre
               #sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip sudo apt-get install -y default-jre
               #Download jre from http://ftp.osuosl.org/pub/funtoo/distfiles/oracle-java/jre-8u92-linux-x64.tar.gz"
@@ -162,13 +167,13 @@ do
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "ln -s /root/jre1.8.0_92/bin/java /usr/bin/java || true"
               #sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "adduser $GECOS 'contrail-builder' contrail-builder"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo 'ipg:x:757:contrail-builder' >> /etc/group"
-              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo 'contrail-builder:x:33694:757::/home/contrail-builder:/bin/bash' >> /etc/passwd"        
+              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo 'contrail-builder:x:33694:757::/home/contrail-builder:/bin/bash' >> /etc/passwd"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "mkdir -p /ecbuilds/jenkins  /volume/contrail /github-build/distro-packages/build /cs-shared/builder /home/contrail-builder/.ssh"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:ipg /home/contrail-builder"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo 'contrail-builder:c0ntrail123' | chpasswd"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:ipg /ecbuilds"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:ipg /ecbuilds/jenkins"
-              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:ipg /home/contrail-builder/.ssh"            
+              sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "chown contrail-builder:ipg /home/contrail-builder/.ssh"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo '10.160.0.155:/contrail/contrail /volume/contrail nfs      rw             0        0' >> /etc/fstab"
               #sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo '10.160.0.156:/contrail/contrail02/Dry-run  /volume/contrail nfs      rw             0        0' >> /etc/fstab"
               sshpass -p c0ntrail123 ssh -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@$ip "echo '10.160.0.156:/contrail/contrail/distro-packages/build/  /github-build/distro-packages/build nfs      rw             0        0' >> /etc/fstab"
@@ -206,10 +211,10 @@ do
               [ ${BUILD_PLATFORM} = "vcenter-plugin" ] && platform=ubuntu14
               [ ${BUILD_PLATFORM} = "centos71" ] && platform=centos71
               [ ${BUILD_PLATFORM} = "redhat70" ] && platform=redhat70
-              
-              bash -x ${BUILD_SCRIPT_CLONE}/scripts/add-node.sh http://cs-build.contrail.juniper.net:8080/ contrail-builder-${BUILD_BRANCH}-${platform}-${slave_ip} $ip ${BUILD_PLATFORM}    
+
+              bash -x ${BUILD_SCRIPT_CLONE}/scripts/add-node.sh http://cs-build.contrail.juniper.net:8080/ contrail-builder-${BUILD_BRANCH}-${platform}-${slave_ip} $ip ${BUILD_PLATFORM}
               sleep 10
           fi
       fi
-   done  
+   done
 done
