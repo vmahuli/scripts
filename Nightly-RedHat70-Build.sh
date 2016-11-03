@@ -10,7 +10,7 @@ export MAVEN_OPTS=-Dmaven.repo.local=/ecbuilds/maven-repo
 
 umask 022
 export PATH=${PATH:-/ecbuilds/contrail-build-scripts/ec-bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games}
-export GITHUB_BUILD=${GITHUB_BUILD:-/github-build-jenkins}
+export GITHUB_BUILD=${GITHUB_BUILD:-/github-build}
 export BUILD_ARCHIVE_ROOT=${BUILD_ARCHIVE_ROOT:-/volume/contrail}
 export BUILD_PLATFORM=${BUILD_PLATFORM:-redhat70}
 export BUILD_SKU
@@ -27,6 +27,7 @@ export BUILD_ARCHIVE_DIR=${BUILD_ARCHIVE_DIR:-/volume/contrail/${BUILD_BRANCH}/$
 export BUILD_ENV_FILE=${BUILD_ENV_FILE:-/volume/contrail/${BUILD_BRANCH}/${BUILD_ID}/${BUILD_PLATFORM}/${BUILD_SKU}/Build-${BUILD_BRANCH}-${BUILD_ID}-${BUILD_PLATFORM}-${BUILD_SKU}-env.sh}
 export BUILD_NOTIFY_USERS=${BUILD_NOTIFY_USERS:-vmahuli@juniper.net}
 export BUILD_HOST_INSTALLERS=${BUILD_HOST_INSTALLERS:-/ecbuilds/contrail-build-scripts/installers}
+export BUILD_SANDBOX=${BUILD_SANDBOX:-sb}
 
 date
 # There are problems while creating redhat70 build host, hence use redhat build vm from snapshot
@@ -62,13 +63,25 @@ date
 $BUILD_SCRIPT_STEPS/02_CheckOutSource.sh
 date
 
-#$BUILD_SCRIPT_STEPS/03_CompileCode.sh
-#$BUILD_SCRIPT_STEPS/04_getgitlogs.sh
+PREV_ID="$(expr ${BUILD_ID} \- 1)"
+PRIOR_MANIFEST=$BUILD_ARCHIVE_ROOT/$BUILD_BRANCH/${PREV_ID}/${BUILD_PLATFORM}/${BUILD_SKU}/manifest.xml
+
+cd $BUILD_WORKAREA/sb
+if [ -f $PRIOR_MANIFEST ]; then
+    echo "Getting git commit information"
+    $BUILD_SCRIPT_BIN/getgitcommits.py $PRIOR_MANIFEST  $BUILD_WORKAREA/sb/.repo/manifest.xml
+
+    cp $BUILD_WORKAREA/sb/git-commits.html $BUILD_ARCHIVE_DIR/.
+    sort -u $BUILD_WORKAREA/sb/commit-users > $BUILD_ARCHIVE_DIR/commit-users
+
+    BUILD_NOTIFY_USERS="$(cat $BUILD_ARCHIVE_DIR/commit-users | grep "juniper.net" | paste -s -d';' - )"
+    export BUILD_NOTIFY_USERS
+fi
 
 mkdir -p /tmp/cache
 rsync -avz contrail-builder@contrail-ec-build19.juniper.net:/tmp/cache/contrail-builder /tmp/cache/.
+
 date
-cd $BUILD_WORKAREA/sb
 python third_party/fetch_packages.py
 python distro/third_party/fetch_packages.py
 python contrail-webui-third-party/fetch_packages.py
@@ -86,6 +99,3 @@ $BUILD_SCRIPT_STEPS/15_CopyImagePhase2.sh
 date
 
 echo ${NODE_NAME}
-#curl --user builder:b086ef3449c0a260aa4accdf961ac7e9 http://anamika.englab.juniper.net:8080/job/JenkinsInfra-SanityScheduler/build --form json='{"parameter": [{"name":"DISTRO", "value":"redhat70"}, {"name":"SKU", "value":"${BUILD_SKU}"}, {"name":"ID", "value":"${BUILD_ID}"}, {"name":"BRANCH", "value":"${BUILD_BRANCH}"}]}'
-date
-
