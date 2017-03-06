@@ -3,6 +3,10 @@
 if [ ${BUILD_BRANCH} = "mainline" ]; then
     wget https://raw.githubusercontent.com/Juniper/contrail-controller/master/src/base/version.info --timeout=10
 else
+    BRANCH=${BUILD_BRANCH}
+    [ ${BUILD_BRANCH} = "R3.0.3.x" ] && BUILD_BRANCH="R3.0" && BRANCH="R3.0.3.x"
+    [ ${BUILD_BRANCH} = "R3.0.2.x" ] && BUILD_BRANCH="R3.0" && BRANCH="R3.0.2.x"
+    [ ${BUILD_BRANCH} = "R3.1.1.x" ] && BUILD_BRANCH="R3.1" && BRANCH="R3.1.1.x"
     wget https://raw.githubusercontent.com/Juniper/contrail-controller/${BUILD_BRANCH}/src/base/version.info --timeout=10
 fi
 
@@ -16,7 +20,7 @@ export BUILD_ARCHIVE_DIR="${GITHUB_BUILD}/${BUILD_BRANCH}/${BUILD_ID}/${BUILD_PL
 export TEST_PKG="${GITHUB_BUILD}/${BUILD_BRANCH}/${BUILD_ID}/${BUILD_PLATFORM}/${BUILD_SKU}/artifacts_extra/contrail-test-ci-*.tgz"
 export TEST_PKG2="${GITHUB_BUILD}/${BUILD_BRANCH}/${BUILD_ID}/${BUILD_PLATFORM}/${BUILD_SKU}/artifacts_extra/contrail-test-${version}-*.tgz"
 export FAB_UTILS="${GITHUB_BUILD}/${BUILD_BRANCH}/${BUILD_ID}/${BUILD_PLATFORM}/${BUILD_SKU}/artifacts_extra/contrail-fabric-utils-*.tgz"
-export CONTRAIL_INSTALL_PKGS=`ls ${GITHUB_BUILD}/${BUILD_BRANCH}/${BUILD_ID}/${BUILD_PLATFORM}/${BUILD_SKU}/contrail-install-packages*.deb`
+export CONTRAIL_INSTALL_PKGS=`ls ${GITHUB_BUILD}/${BRANCH}/${BUILD_ID}/${BUILD_PLATFORM}/${BUILD_SKU}/contrail-install-packages*.deb`
 export SVL_ARCHIVE_DIR="/volume/contrail/${BUILD_BRANCH}/${BUILD_ID}/${BUILD_PLATFORM}/${BUILD_SKU}"
 
 mkdir -p ${BUILD_WORKAREA}/build/artifacts && cd ${BUILD_WORKAREA}
@@ -61,8 +65,8 @@ cd ${BUILD_WORKAREA}/build/artifacts
 DOCKER_PKG1=`ls docker-image-contrail-test-ci-${BUILD_SKU}-*-${BUILD_ID}.tar.gz`
 DOCKER_PKG2=`ls docker-image-contrail-test-${BUILD_SKU}-*-${BUILD_ID}.tar.gz`
 
-scp ${DOCKER_PKG1} contrail-builder@contrail-ec-build04:${SVL_ARCHIVE_DIR}/artifacts
-scp ${DOCKER_PKG2} contrail-builder@contrail-ec-build04:${SVL_ARCHIVE_DIR}/artifacts
+scp ${DOCKER_PKG1} contrail-builder@10.150.16.128:${SVL_ARCHIVE_DIR}/artifacts
+scp ${DOCKER_PKG2} contrail-builder@10.150.16.128:${SVL_ARCHIVE_DIR}/artifacts
 
 chmod 777 ${BUILD_ARCHIVE_DIR}/artifacts
 chmod 777 ${BUILD_ARCHIVE_DIR}/artifacts_extra
@@ -76,3 +80,4 @@ chmod 544 ${BUILD_ARCHIVE_DIR}/artifacts
 chmod 544 ${BUILD_ARCHIVE_DIR}/artifacts_extra
 chmod 544 ${BUILD_ARCHIVE_DIR}
 chmod 544 ${GITHUB_BUILD}/${BUILD_BRANCH}/${BUILD_ID}/${BUILD_PLATFORM}
+
