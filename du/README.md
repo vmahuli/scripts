@@ -26,7 +26,7 @@ usage: du.py [-h] [--humanread] [--byteread] [--rootdir ROOTDIR]
              [--maxdepth MAXDEPTH] [--modtime] [--subtotal] 
        du.py [--showtree] [--rootdir ROOTDIR]
 
-optional arguments:
+Arguments:
 
   -h, --help           show this help message and exit
   
