@@ -20,29 +20,22 @@
 * ./du.py --humanread --rootdir=/etc/ (displays disk space usage in human readable format)
 * ./du.py --showtree --rootdir=/etc/yum.repos.d/ (displays disk space usage in tree format)
 
-## Help
-
-usage: du.py [-h] [--humanread] [--byteread] [--rootdir ROOTDIR]
+## Usage
+ 
+du.py [-h] [--humanread] [--byteread] [--rootdir ROOTDIR]
              [--maxdepth MAXDEPTH] [--modtime] [--subtotal] 
-       du.py [--showtree] [--rootdir ROOTDIR]
+du.py [--showtree] [--rootdir ROOTDIR]
 
 Arguments:
 
-  -h, --help           show this help message and exit
-  
+  -h, --help           show this help message and exit  
   --humanread          human readable output (either human readable or byte
-                       readable)
-                       
+                       readable)                       
   --byteread           byte readable output (either byte readable or human
-                       readable)
-                       
-  --rootdir ROOTDIR    root directory (mandatory)
-  
-  --maxdepth MAXDEPTH  max-depth value (optional)
-  
-  --modtime            mod time value (optional)
-  
-  --subtotal           subtotal value (optional)
-  
+                       readable)                       
+  --rootdir ROOTDIR    root directory (mandatory)  
+  --maxdepth MAXDEPTH  max-depth value (optional)  
+  --modtime            mod time value (optional)  
+  --subtotal           subtotal value (optional)  
   --showtree           Show disk usage in tree format (optional); use showtree
                        only with rootdir
