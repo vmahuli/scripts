@@ -12,9 +12,11 @@
 * Display subtotal or summary of the file system
 * Display disk usage in tree format which is human readable
 
-## Use below steps to install
+## Use below step to install
 
 * ./setup.sh (installs required softwares and modules)
+
+## Try below commands
 * ./du.py --byteread --rootdir=/etc/ --maxdepth=1 (displays disk space usage in byte readable format and also with max depth set to 1) 
 * ./du.py --byteread --rootdir=/etc/ --modtime (displays disk space usage in byte readable format along with modtime)
 * ./du.py --humanread --rootdir=/etc/ (displays disk space usage in human readable format)
