@@ -23,17 +23,26 @@
 ## Help
 
 usage: du.py [-h] [--humanread] [--byteread] [--rootdir ROOTDIR]
-             [--maxdepth MAXDEPTH] [--modtime] [--subtotal] [--showtree]
+             [--maxdepth MAXDEPTH] [--modtime] [--subtotal] 
+       du.py [--showtree] [--rootdir ROOTDIR]
 
 optional arguments:
+
   -h, --help           show this help message and exit
+  
   --humanread          human readable output (either human readable or byte
                        readable)
+                       
   --byteread           byte readable output (either byte readable or human
                        readable)
+                       
   --rootdir ROOTDIR    root directory (mandatory)
+  
   --maxdepth MAXDEPTH  max-depth value (optional)
+  
   --modtime            mod time value (optional)
+  
   --subtotal           subtotal value (optional)
+  
   --showtree           Show disk usage in tree format (optional); use showtree
-                       only with rootdir  
+                       only with rootdir
