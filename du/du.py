@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 
+''' Python disk utility Script to display disk usage of a file system '''
+VERSION = '1.0'
+
 import sys
 import argparse
 import subprocess
 
+# for displaying help
 def usage():
   ap.print_help()
   sys.exit(1)
 
+# module to run "tree" command
 def show_tree(args):
   rootdir = args['rootdir']
   tree_cmd = 'tree' + ' ' + '-a' + ' ' + '-h' + ' ' + '--du' + ' ' + rootdir
@@ -16,6 +21,7 @@ def show_tree(args):
   print
   subprocess.call(tree_cmd, shell=True)
 
+# module to display disk space used
 def disk_usage(args):
   humanread = '-h' if args['humanread'] else ' '
   byteread = '-B1' if args['byteread']  else ' '
@@ -56,13 +62,13 @@ ap.add_argument("--showtree", action='store_true', help='''Show disk usage in tr
                                                            use showtree only with rootdir''')
 args = vars(ap.parse_args())
 
+# handle surprises
 if args['byteread'] and args['humanread']:
   usage()
 if args['rootdir'] is '':
   usage()
 if args['showtree'] and args['rootdir'] is None:
   usage()
-
 
 if args['showtree']:
   show_tree(args)
