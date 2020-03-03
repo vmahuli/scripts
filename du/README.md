@@ -24,6 +24,7 @@
  
 du.py [-h] [--humanread] [--byteread] [--rootdir ROOTDIR]
              [--maxdepth MAXDEPTH] [--modtime] [--subtotal] 
+
 du.py [--showtree] [--rootdir ROOTDIR]
 
 Arguments:
