@@ -1,4 +1,4 @@
-# du tool
+# du
 
 ## du tool...
 * Is supported on centos, redhat and ubuntu hosts.
@@ -17,10 +17,10 @@
 ./setup.sh (installs required softwares and modules)
 
 ## Try below commands
-./du.py --byteread --rootdir=/etc/ --maxdepth=1 (displays disk space usage in byte readable format and also with max depth set to 1) 
-./du.py --byteread --rootdir=/etc/ --modtime (displays disk space usage in byte readable format along with modtime)
-./du.py --humanread --rootdir=/etc/ (displays disk space usage in human readable format)
-./du.py --showtree --rootdir=/etc/yum.repos.d/ (displays disk space usage in tree format)
+./du.py --byteread --rootdir=/etc/ --maxdepth=1 (displays disk space usage in byte readable format and also with max depth set to 1) \
+./du.py --byteread --rootdir=/etc/ --modtime (displays disk space usage in byte readable format along with modtime)\
+./du.py --humanread --rootdir=/etc/ (displays disk space usage in human readable format)\
+./du.py --showtree --rootdir=/etc/yum.repos.d/ (displays disk space usage in tree format)\
 
 ## Usage
  
