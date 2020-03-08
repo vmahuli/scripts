@@ -1,5 +1,5 @@
 # du tool using stat and find
-* The disk usage is calculated using "stat" and "Find" utilities. This is just another way to calculate disk usage.
+* The disk usage is calculated using "stat" and "find" utilities. This is just another way to calculate disk usage on a per file basis.
 * The disk usage is calculated on per file basis. Each file is put in a loop and "stat" command is run on the file to get disk usage, and modification time
 * The max depth is input to find command itself
 
