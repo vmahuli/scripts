@@ -13,7 +13,7 @@
 ./du_misc.py --rootdir=/etc --maxdepth=2
 
 ## Usage
-usage: du_misc.py [-h] [--rootdir ROOTDIR] [--maxdepth MAXDEPTH]\
+usage: du_misc.py [-h] [--rootdir ROOTDIR] [--maxdepth MAXDEPTH]
 
 optional arguments:\
   -h, --help           show this help message and exit\
