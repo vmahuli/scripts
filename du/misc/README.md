@@ -1,6 +1,7 @@
 # du tool using stat
-The disk usage is found using "stat" utility.
-Stat and Find are the utilities which are being used in this script.
+* The disk usage is calculated using "stat" and "Find" utilities. This is just another way to calculate disk usage.
+* The disk usage is calculated on per file basis. Each file is put in a loop and "stat" command is run on the file to get disk usage, and modification time
+* The max depth is input to find command itself
 
 ## Features
 * Display disk space used in byte readable format
@@ -12,9 +13,9 @@ Stat and Find are the utilities which are being used in this script.
 ./du_misc.py --rootdir=/etc --maxdepth=2
 
 ## Usage
-usage: du_misc.py [-h] [--rootdir ROOTDIR] [--maxdepth MAXDEPTH]
+usage: du_misc.py [-h] [--rootdir ROOTDIR] [--maxdepth MAXDEPTH]\
 
-optional arguments:
-  -h, --help           show this help message and exit
-  --rootdir ROOTDIR    root directory
+optional arguments:\
+  -h, --help           show this help message and exit\
+  --rootdir ROOTDIR    root directory\
   --maxdepth MAXDEPTH  max-depth value
