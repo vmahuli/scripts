@@ -7,7 +7,7 @@ import sys
 import argparse
 import subprocess
 
-# for displaying help
+# module to display help
 def usage():
   ap.print_help()
   sys.exit(1)

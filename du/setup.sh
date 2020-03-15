@@ -31,7 +31,7 @@ fi
 #check for redhat host and install requirements
 rpm -qf /etc/redhat-release | grep redhat-release-server > /dev/null 2>&1
 if [ $? = 0 ]; then
-  du_req
+  rpm_req
 fi
 
 #check if it is a ubuntu system and install requirements
