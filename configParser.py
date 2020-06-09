@@ -9,6 +9,4 @@ configur = ConfigParser()
 configur.read('config.ini')
 
 #print ("Sections : ", configur.sections())
-#print (configur.get('pypi','packages'))
-
-print (configur.get(sys.argv[1],'packages'))
+print (configur.get(sys.argv[1],sys.argv[2]))
