@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from configparser import ConfigParser
 import sys
 import argparse
