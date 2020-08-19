@@ -1,2 +1,2 @@
 # scripts
-Contains automation and jenkins scripts.
+Contains some scripts.
