@@ -1,6 +1,6 @@
 import os
 
-path = "/root"
+path = "/Users/vmahuli/github/scripts"
 
 for (path, dirs, files) in os.walk(path):
     print path
