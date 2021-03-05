@@ -2,7 +2,7 @@
 
 '''
 This script takes 2 lists as input and combines the elements
-seperately and then adds them
+seperately and then adds them.
 
 Author: Vinay Mahuli
 '''
